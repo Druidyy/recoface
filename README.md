@@ -1,2 +1,2 @@
-# Faciale_Reconisation
-Deploiment of an app of fiacial regonization on Azure
+#Facial recognition 
+Deployment of a facial recognition App on Azure
