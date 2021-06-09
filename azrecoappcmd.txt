@@ -1,0 +1,42 @@
+az group create --name facialereco --location francecentral
+blobStorageAccount="facialerecoblob"
+
+az storage account create --name $blobStorageAccount --location francecentral \
+  --resource-group facialereco --sku Standard_LRS --kind StorageV2 --access-tier hot
+  
+$blobStorageAccount="facialerecoblob"
+
+az storage account create --name $blobStorageAccount --location francecentral --resource-group facialereco --sku Standard_LRS --kind StorageV2 --access-tier hot
+
+$blobStorageAccountKey=$(az storage account keys list -g facialereco -n $blobStorageAccount --query "[0].value" --output tsv)
+
+az storage container create --name images --account-name $blobStorageAccount --account-key $blobStorageAccountKey
+
+az storage container create --name thumbnails --account-name $blobStorageAccount --account-key $blobStorageAccountKey --public-access container
+
+
+
+$blobStorageAccountKey=$(az storage account keys list -g facialereco `
+  -n $blobStorageAccount --query "[0].value" --output tsv)
+
+az storage container create --name images `
+  --account-name $blobStorageAccount `
+  --account-key $blobStorageAccountKey
+
+az storage container create --name thumbnails `
+  --account-name $blobStorageAccount `
+  --account-key $blobStorageAccountKey --public-access container
+  
+az appservice plan create --name facialerecoapp --resource-group facialereco --sku Free
+
+$webapp="facialerecowebapp"
+
+az webapp create --name $webapp --resource-group facialereco --plan facialerecoapp
+
+az webapp deployment source config --name $webapp --resource-group facialereco `
+  --branch master --manual-integration `
+  --repo-url https://github.com/Azure-Samples/azure-sdk-for-js-storage-blob-stream-nodejs
+  
+ az webapp config appsettings set --name $webapp --resource-group facialereco `
+  --settings AZURE_STORAGE_ACCOUNT_NAME=$blobStorageAccount `
+  AZURE_STORAGE_ACCOUNT_ACCESS_KEY=$blobStorageAccountKey 
