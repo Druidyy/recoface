@@ -35,8 +35,38 @@ az webapp create --name $webapp --resource-group facialereco --plan facialerecoa
 
 az webapp deployment source config --name $webapp --resource-group facialereco `
   --branch master --manual-integration `
-  --repo-url https://github.com/Azure-Samples/azure-sdk-for-js-storage-blob-stream-nodejs
+  --repo-url https://github.com/Azure-Samples/azure-sdk-for-js-storage-blob-stream-nodejs    
   
  az webapp config appsettings set --name $webapp --resource-group facialereco `
   --settings AZURE_STORAGE_ACCOUNT_NAME=$blobStorageAccount `
-  AZURE_STORAGE_ACCOUNT_ACCESS_KEY=$blobStorageAccountKey 
+  AZURE_STORAGE_ACCOUNT_ACCESS_KEY=$blobStorageAccountKey
+  
+  $resourceGroupName="facialereco"
+  $location="francecentral"
+  $functionstorage="facialerecostokage1"
+  
+  az storage account create --name $functionstorage --location $location `
+--resource-group $resourceGroupName --sku Standard_LRS --kind StorageV2
+
+$functionapp="resizeappfonction"
+
+az functionapp create --name $functionapp --storage-account $functionstorage `
+  --resource-group $resourceGroupName --consumption-plan-location $location `
+  --functions-version 2
+  
+  
+$blobStorageAccountKey=$(az storage account keys list -g $resourceGroupName `
+  -n $blobStorageAccount --query [0].value --output tsv)
+
+$storageConnectionString=$(az storage account show-connection-string --resource-group $resourceGroupName `
+  --name $blobStorageAccount --query connectionString --output tsv)
+
+az functionapp config appsettings set --name $functionapp --resource-group $resourceGroupName `
+  --settings FUNCTIONS_EXTENSION_VERSION=~2 BLOB_CONTAINER_NAME=thumbnails `
+  AZURE_STORAGE_ACCOUNT_NAME=$blobStorageAccount `
+  AZURE_STORAGE_ACCOUNT_ACCESS_KEY=$blobStorageAccountKey `
+  AZURE_STORAGE_CONNECTION_STRING=$storageConnectionString
+    
+  az functionapp deployment source config --name $functionapp `
+  --resource-group $resourceGroupName --branch master --manual-integration `
+  --repo-url https://github.com/Azure-Samples/storage-blob-resize-function-node-v10
